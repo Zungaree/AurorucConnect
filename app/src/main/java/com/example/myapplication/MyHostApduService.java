@@ -1,0 +1,196 @@
+package com.example.myapplication;
+
+import android.nfc.cardemulation.HostApduService;
+import android.os.Bundle;
+import android.util.Log;
+import android.content.Intent;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import androidx.annotation.NonNull;
+
+/**
+ * Host Card Emulation service implementation.
+ * This service handles APDU commands from NFC reader.
+ */
+public class MyHostApduService extends HostApduService {
+    private static final String TAG = "MyHostApduService";
+    
+    // ISO-DEP command HEADER for selecting an AID
+    private static final String SELECT_APDU_HEADER = "00A40400";
+    // Format: [Class | Instruction | Parameter 1 | Parameter 2]
+    
+    // Our custom AID we registered in apdu_service.xml
+    private static final String CUSTOM_AID = "F22334455667";
+    
+    // "OK" status word sent in response (9000 hex)
+    private static final byte[] STATUS_SUCCESS = {(byte) 0x90, (byte) 0x00};
+    // "Command not allowed" status word sent in response (6986 hex)
+    private static final byte[] STATUS_FAILED = {(byte) 0x69, (byte) 0x86};
+    
+    // Custom response data for successful SELECT command
+    
+    
+    // User data to be sent
+    private String userName = "";
+    private String userEmail = "";
+    
+    // NFC deactivation reasons
+    public static final int DEACTIVATION_LINK_LOSS = 0;
+    public static final int DEACTIVATION_DESELECTED = 1;
+    
+    // Broadcast action for NFC status updates
+    public static final String ACTION_NFC_STATUS = "com.example.myapplication.NFC_STATUS";
+    public static final String EXTRA_NFC_CONNECTED = "connected";
+    
+    // Broadcast action for log messages
+    public static final String ACTION_NFC_LOG = "com.example.myapplication.NFC_LOG";
+    public static final String EXTRA_LOG_MESSAGE = "log_message";
+
+    // GET DATA command header
+    private static final String GET_DATA_HEADER = "00CA0000";
+    // PUT DATA command header
+    private static final String PUT_DATA_HEADER = "00DA0000";
+    
+    // Date formatters
+    private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        loadUserData();
+        // Ensure we wait for Firebase data
+        FirebaseAuth.getInstance().addAuthStateListener(new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    loadUserData();
+                }
+            }
+        });
+    }
+
+    private void loadUserData() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            userEmail = user.getEmail();
+            
+            DatabaseReference userRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(user.getUid());
+                
+            userRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot snapshot) {
+                    if (snapshot.exists() && snapshot.hasChild("name")) {
+                        userName = snapshot.child("name").getValue(String.class);
+                        Log.d(TAG, "User name loaded: " + userName);
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    Log.e(TAG, "Failed to load user data: " + error.getMessage());
+                }
+            });
+        }
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.hasExtra("name")) {
+            userName = intent.getStringExtra("name");
+            Log.d(TAG, "Name to send set to: " + userName);
+            sendLogBroadcast("Ready to send name: " + userName);
+        }
+        return START_STICKY;
+    }
+
+    @Override
+    public byte[] processCommandApdu(byte[] commandApdu, Bundle extras) {
+        String hexCommandApdu = ApduUtils.bytesToHex(commandApdu);
+        Log.d(TAG, "Received APDU: " + hexCommandApdu);
+        sendLogBroadcast("Received command: " + hexCommandApdu);
+        
+        // Handle GET DATA command for specific files
+        if (hexCommandApdu.startsWith(GET_DATA_HEADER)) {
+            if (commandApdu.length >= 6) {
+                String fileNumber = String.format("%02X", commandApdu[5]);
+                Log.d(TAG, "GET DATA for file: " + fileNumber);
+                sendLogBroadcast("Reading file: " + fileNumber);
+                
+                // Get user data based on file number
+                String response;
+                
+                if ("01".equals(fileNumber)) {
+                    // File 1: Username
+                    response = (userName != null && !userName.isEmpty()) ? userName : "Unknown User";
+                    Log.d(TAG, "Sending username: " + response);
+                } else if ("02".equals(fileNumber)) {
+                    // File 2: Email
+                    response = (userEmail != null && !userEmail.isEmpty()) ? userEmail : "no-email";
+                    Log.d(TAG, "Sending email: " + response);
+                } else {
+                    response = "Unknown file";
+                }
+                
+                sendLogBroadcast("File " + fileNumber + " content: " + response);
+                return ApduUtils.buildResponse(response.getBytes(), ApduUtils.SW_SUCCESS);
+            }
+        }
+        // Handle SELECT AID command
+        else if (ApduUtils.isSelectCommand(commandApdu)) {
+            String aid = ApduUtils.extractAidFromSelect(commandApdu);
+            Log.d(TAG, "AID: " + aid);
+            sendLogBroadcast("SELECT AID: " + aid);
+            
+            if (aid.equals(CUSTOM_AID)) {
+                sendNfcStatusBroadcast(true);
+                sendLogBroadcast("AID matched - Connection established");
+                return STATUS_SUCCESS;
+            } else {
+                Log.d(TAG, "Unknown AID: " + aid);
+                sendLogBroadcast("Unknown AID received: " + aid);
+                return STATUS_FAILED;
+                }
+            }
+        
+        Log.d(TAG, "Unsupported command: " + hexCommandApdu);
+        sendLogBroadcast("Unsupported command received: " + hexCommandApdu);
+        return ApduUtils.SW_INS_NOT_SUPPORTED;
+    }
+
+    @Override
+    public void onDeactivated(int reason) {
+        // The connection to the terminal was lost
+        Log.d(TAG, "Deactivated: " + reason);
+        String reasonText = (reason == DEACTIVATION_LINK_LOSS) ? "Link Lost" : "Deselected";
+        sendLogBroadcast("Connection ended: " + reasonText);
+        
+        // Notify that we're not connected anymore
+        sendNfcStatusBroadcast(false);
+    }
+    
+    private void sendNfcStatusBroadcast(boolean isConnected) {
+        // Send a broadcast to the activity to update UI
+        Intent intent = new Intent(ACTION_NFC_STATUS);
+        intent.putExtra(EXTRA_NFC_CONNECTED, isConnected);
+        sendBroadcast(intent);
+    }
+
+    private void sendLogBroadcast(String message) {
+        // Send a broadcast to the activity to update the log
+        Intent intent = new Intent(ACTION_NFC_LOG);
+        intent.putExtra(EXTRA_LOG_MESSAGE, message);
+        sendBroadcast(intent);
+    }
+} 

@@ -1,0 +1,6 @@
+C:\Users\Ron\AndroidStudioProjects\MyApplication2\obj\Debug\net6.0-windows\NFCReader.vbproj.AssemblyReference.cache
+C:\Users\Ron\AndroidStudioProjects\MyApplication2\obj\Debug\net6.0-windows\NFCReader.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ron\AndroidStudioProjects\MyApplication2\obj\Debug\net6.0-windows\NFCReader.AssemblyInfoInputs.cache
+C:\Users\Ron\AndroidStudioProjects\MyApplication2\obj\Debug\net6.0-windows\NFCReader.AssemblyInfo.vb
+C:\Users\Ron\AndroidStudioProjects\MyApplication2\obj\Debug\net6.0-windows\NFCReader.vbproj.CoreCompileInputs.cache
+C:\Users\Ron\AndroidStudioProjects\MyApplication2\obj\Debug\net6.0-windows\NFCReader.sourcelink.json

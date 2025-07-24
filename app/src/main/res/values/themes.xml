@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.MyApplication" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Material 3 color attributes -->
+        <item name="colorPrimary">#122F4F</item>
+        <item name="colorPrimaryContainer">#122F4F</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnPrimaryContainer">@android:color/white</item>
+        
+        <!-- Button specific styling -->
+        <item name="buttonStyle">@style/CustomButtonStyle</item>
+        <item name="materialButtonStyle">@style/CustomButtonStyle</item>
+    </style>
+
+    <style name="Theme.MyApplication" parent="Base.Theme.MyApplication" />
+
+    <style name="Theme.MyApplication.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="CustomButtonStyle" parent="Widget.Material3.Button">
+        <item name="backgroundTint">#122F4F</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:padding">16dp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Button</item>
+    </style>
+</resources>

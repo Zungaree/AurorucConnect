@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1023143491483",
+    "firebase_url": "https://db-aurorus-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "db-aurorus",
+    "storage_bucket": "db-aurorus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1023143491483:android:c5cd0a84eabdca06eed33e",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCMBWurlduHa5nDAETfmjz-tDqUB-mnBA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
