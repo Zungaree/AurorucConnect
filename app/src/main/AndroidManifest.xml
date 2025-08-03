@@ -9,6 +9,10 @@
 
     <!-- Internet permission for Firebase -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Storage permissions for profile picture -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"

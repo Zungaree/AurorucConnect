@@ -10,7 +10,7 @@
         android:id="@+id/logoContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="32dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,16 +19,49 @@
 
         <ImageView
             android:id="@+id/logoImageView"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@drawable/aurorus_logo" />
 
         <ImageView
             android:id="@+id/textLogoImageView"
-            android:layout_width="140dp"
-            android:layout_height="100dp"
+            android:layout_width="120dp"
+            android:layout_height="80dp"
             android:layout_marginStart="16dp"
             android:src="@drawable/aurorus_text_logo" />
+
+    </LinearLayout>
+
+    <!-- Profile Picture Section -->
+    <LinearLayout
+        android:id="@+id/profilePictureContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/logoContainer">
+
+        <ImageView
+            android:id="@+id/profilePictureImageView"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:background="@drawable/profile_picture_background"
+            android:scaleType="centerCrop"
+            android:src="@drawable/default_profile_picture" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/selectProfilePictureButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Add Profile Picture (Optional)"
+            android:textSize="12sp"
+            app:cornerRadius="20dp"
+            app:strokeColor="#122F4F" />
 
     </LinearLayout>
 
@@ -37,12 +70,12 @@
         style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="24dp"
         android:hint="Full Name"
         android:textColorHint="#000000"
         app:boxBackgroundColor="#E8E8E8"
         app:hintTextColor="#000000"
-        app:layout_constraintTop_toBottomOf="@id/logoContainer">
+        app:layout_constraintTop_toBottomOf="@id/profilePictureContainer">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/nameEditText"
