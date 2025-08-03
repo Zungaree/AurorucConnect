@@ -27,6 +27,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -41,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private Button logoutButton;
     private ComponentName hceService;
     private FirebaseAuth firebaseAuth;
+    private DatabaseReference usersRef;
     
     // BroadcastReceiver to handle NFC status updates and logs from our service
     private BroadcastReceiver nfcReceiver = new BroadcastReceiver() {
@@ -62,8 +68,9 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         
-        // Initialize Firebase Auth
+        // Initialize Firebase Auth and Database
         firebaseAuth = FirebaseAuth.getInstance();
+        usersRef = FirebaseDatabase.getInstance().getReference("users");
         
         // Initialize views
         welcomeTextView = findViewById(R.id.welcomeTextView);
@@ -104,8 +111,27 @@ public class MainActivity extends AppCompatActivity {
     private void updateUserInfo() {
         FirebaseUser user = firebaseAuth.getCurrentUser();
         if (user != null) {
-            String displayName = user.getDisplayName();
-            welcomeTextView.setText("Welcome, " + (displayName != null ? displayName : "User"));
+            // Fetch user data from Firebase Database
+            usersRef.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+                        String userName = dataSnapshot.child("name").getValue(String.class);
+                        if (userName != null && !userName.isEmpty()) {
+                            welcomeTextView.setText("Welcome, " + userName);
+                        } else {
+                            welcomeTextView.setText("Welcome, User");
+                        }
+                    } else {
+                        welcomeTextView.setText("Welcome, User");
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    welcomeTextView.setText("Welcome, User");
+                }
+            });
         }
     }
 
