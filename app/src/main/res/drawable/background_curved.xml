@@ -1,0 +1,15 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Top Teal Background -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#37A7BC"/>
+        </shape>
+    </item>
+    <!-- Bottom White with rounded top corners -->
+    <item android:top="200dp"> <!-- adjust this based on image height -->
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/white"/>
+            <corners android:topLeftRadius="32dp" android:topRightRadius="32dp"/>
+        </shape>
+    </item>
+</layer-list>

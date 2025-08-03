@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#37A7BC"
+    android:background="@drawable/background_curved"
     tools:context=".MainActivity">
 
     <TextView
@@ -32,6 +32,7 @@
         app:layout_constraintTop_toBottomOf="@id/welcomeTextView" />
 
     <Button
+
         android:id="@+id/checkInButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

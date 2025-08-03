@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#37A7BC">
@@ -40,9 +41,13 @@
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="32dp"
                 android:text="₱"
-                android:textColor="#122F4F"
+                android:textColor="@android:color/white"
                 android:textSize="32sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:shadowColor="#000000"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="8"/>
 
             <TextView
                 android:id="@+id/creditAmount"
@@ -52,9 +57,13 @@
                 android:layout_marginTop="32dp"
                 android:layout_toEndOf="@id/creditSymbol"
                 android:text="200"
-                android:textColor="#122F4F"
+                android:textColor="@android:color/white"
                 android:textSize="32sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:shadowColor="#000000"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="8"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -104,25 +113,31 @@
         app:layout_constraintTop_toBottomOf="@id/creditCard" />
 
     <Button
-        android:id="@+id/learnMoreButton"
+        android:id="@+id/learnmoreButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginBottom="8dp"
-        android:background="@android:color/transparent"
+        android:layout_marginTop="290dp"
+        android:backgroundTint="#122F4F"
+        android:drawableStart="@drawable/ic_history"
+        android:drawablePadding="8dp"
+        android:padding="16dp"
         android:text="Learn More"
         android:textColor="@android:color/white"
-        app:layout_constraintBottom_toTopOf="@id/backButton" />
+        app:layout_constraintTop_toBottomOf="@id/creditCard" />
 
     <Button
         android:id="@+id/backButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginBottom="24dp"
-        android:background="@android:color/transparent"
+        android:layout_marginTop="350dp"
+        android:backgroundTint="#122F4F"
+        android:drawableStart="@drawable/ic_history"
+        android:drawablePadding="8dp"
+        android:padding="16dp"
         android:text="Back"
         android:textColor="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/creditCard" />
 
 </androidx.constraintlayout.widget.ConstraintLayout> 
