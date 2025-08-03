@@ -29,7 +29,9 @@
         android:layout_marginTop="24dp"
         android:scaleType="fitXY"
         android:src="@drawable/platinum"
-        app:layout_constraintTop_toBottomOf="@id/welcomeTextView" />
+        app:cornerRadius="20dp"
+        app:layout_constraintTop_toBottomOf="@id/welcomeTextView"
+        tools:layout_editor_absoluteX="24dp" />
 
     <Button
 
@@ -46,6 +48,7 @@
         android:text="Check-in"
         android:textColor="@android:color/white"
         android:textSize="18sp"
+        app:backgroundTint="#122F4F"
         app:layout_constraintTop_toBottomOf="@id/cardImageView" />
 
     <Button
@@ -62,6 +65,7 @@
         android:text="Battle Pass"
         android:textColor="@android:color/white"
         android:textSize="18sp"
+        app:backgroundTint="#122F4F"
         app:layout_constraintTop_toBottomOf="@id/checkInButton" />
 
     <LinearLayout
@@ -86,7 +90,9 @@
             android:padding="16dp"
             android:text="Store Credits"
             android:textColor="@android:color/white"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            app:backgroundTint="#122F4F"
+            />
 
         <Button
             android:id="@+id/accountButton"
@@ -101,7 +107,9 @@
             android:padding="16dp"
             android:text="Account"
             android:textColor="@android:color/white"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            app:backgroundTint="#122F4F"
+            />
     </LinearLayout>
 
     <Button
@@ -110,11 +118,15 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="24dp"
-        android:background="@drawable/rounded_button_outline"
         android:padding="16dp"
         android:text="Logout"
         android:textColor="#122F4F"
         android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:backgroundTint="#FFFFFF"
+        app:cornerRadius="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:strokeColor="#122F4F"
+        app:strokeWidth="3dp"
+        tools:layout_editor_absoluteX="24dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
