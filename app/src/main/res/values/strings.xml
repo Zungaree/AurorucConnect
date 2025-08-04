@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Auroruc Connect</string>
+    <string name="app_name">Aurorus Connect</string>
     <string name="service_description">NFC HCE Card Emulation</string>
     <string name="aid_description">NFC Card Emulation Demo</string>
     <string name="nfc_instructions">Place your device near an NFC reader</string>
