@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private Button checkInButton;
     private Button battlePassButton;
     private Button storeCreditsButton;
+    private Button catalogButton;
     private Button accountButton;
     private Button logoutButton;
     private ComponentName hceService;
@@ -78,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         checkInButton = findViewById(R.id.checkInButton);
         battlePassButton = findViewById(R.id.battlePassButton);
         storeCreditsButton = findViewById(R.id.storeCreditsButton);
+        catalogButton = findViewById(R.id.catalogButton);
         accountButton = findViewById(R.id.accountButton);
         logoutButton = findViewById(R.id.logoutButton);
         
@@ -88,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         checkInButton.setOnClickListener(v -> startCheckIn());
         battlePassButton.setOnClickListener(v -> openBattlePass());
         storeCreditsButton.setOnClickListener(v -> openStoreCredits());
+        catalogButton.setOnClickListener(v -> openCatalog());
         accountButton.setOnClickListener(v -> openAccount());
         logoutButton.setOnClickListener(v -> handleLogout());
         
@@ -212,6 +215,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void openStoreCredits() {
         Intent intent = new Intent(this, StoreCreditsMainActivity.class);
+        startActivity(intent);
+    }
+    
+    private void openCatalog() {
+        Intent intent = new Intent(this, CatalogActivity.class);
         startActivity(intent);
     }
     

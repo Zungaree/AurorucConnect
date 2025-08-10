@@ -21,10 +21,8 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
     private static final String TAG = "StoreCreditsCheckIn";
     
     private NfcAdapter nfcAdapter;
-    private TextView amountTextView;
     private TextView instructionsTextView;
     private ComponentName hceService;
-    private String amount;
     private String mode;
     
     private BroadcastReceiver nfcReceiver = new BroadcastReceiver() {
@@ -34,9 +32,15 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
             if (StoreCreditsHceService.ACTION_NFC_STATUS.equals(action)) {
                 boolean connected = intent.getBooleanExtra(StoreCreditsHceService.EXTRA_NFC_CONNECTED, false);
                 if (connected) {
-                    Toast.makeText(StoreCreditsCheckInActivity.this, 
-                        mode.equals("receive") ? "Credits received!" : "Payment successful!", 
+                    // Connected; wait for explicit result ACK from reader
+                }
+            } else if (StoreCreditsHceService.ACTION_NFC_RESULT.equals(action)) {
+                boolean success = intent.getBooleanExtra(StoreCreditsHceService.EXTRA_NFC_SUCCESS, false);
+                String message = intent.getStringExtra(StoreCreditsHceService.EXTRA_NFC_RESULT_MESSAGE);
+                Toast.makeText(StoreCreditsCheckInActivity.this,
+                        message != null ? message : (success ? (mode.equals("receive") ? "Credits received!" : "Payment successful!") : "Failed"),
                         Toast.LENGTH_SHORT).show();
+                if (success) {
                     finish();
                 }
             }
@@ -48,16 +52,13 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_store_credits_checkin);
         
-        // Get amount and mode from intent
-        amount = getIntent().getStringExtra("amount");
+        // Get mode from intent
         mode = getIntent().getStringExtra("mode");
         
         // Initialize views
-        amountTextView = findViewById(R.id.amountTextView);
         instructionsTextView = findViewById(R.id.instructionsTextView);
         
         // Set text based on mode
-        amountTextView.setText("₱" + amount);
         instructionsTextView.setText(mode.equals("receive") ? 
             "Hold your phone near the terminal to receive credits" :
             "Hold your phone near the terminal to pay");
@@ -68,7 +69,7 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
         // Initialize NFC
         initNfc();
         
-        // Start HCE service with amount and mode
+        // Start HCE service
         startHceService();
     }
 
@@ -78,6 +79,7 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
         // Register for broadcasts from our service
         IntentFilter filter = new IntentFilter();
         filter.addAction(StoreCreditsHceService.ACTION_NFC_STATUS);
+        filter.addAction(StoreCreditsHceService.ACTION_NFC_RESULT);
         registerReceiver(nfcReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         
         // Check NFC status
@@ -111,9 +113,8 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
             PackageManager.DONT_KILL_APP
         );
         
-        // Start service with amount and mode
+        // Start service
         Intent serviceIntent = new Intent(this, StoreCreditsHceService.class);
-        serviceIntent.putExtra("amount", amount);
         serviceIntent.putExtra("mode", mode);
         startService(serviceIntent);
     }

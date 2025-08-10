@@ -40,12 +40,20 @@ public class StoreCreditsHceService extends HostApduService {
     // Broadcast action for log messages
     public static final String ACTION_NFC_LOG = "com.example.myapplication.NFC_LOG";
     public static final String EXTRA_LOG_MESSAGE = "log_message";
+    
+    // Broadcast action for transaction result
+    public static final String ACTION_NFC_RESULT = "com.example.myapplication.NFC_RESULT";
+    public static final String EXTRA_NFC_SUCCESS = "success";
+    public static final String EXTRA_NFC_RESULT_MESSAGE = "message";
 
     // GET DATA command header
     private static final String GET_DATA_HEADER = "00CA0000";
+    // Proprietary commands from reader to signal completion
+    private static final String COMPLETE_SUCCESS_HEADER = "80500000"; // success ack
+    private static final String COMPLETE_FAILURE_HEADER = "80510000"; // failure ack
     
     private String userName = "";
-    private String amount = "";
+    private String userEmail = "";
     private DatabaseReference userRef;
 
     @Override
@@ -64,9 +72,14 @@ public class StoreCreditsHceService extends HostApduService {
             userRef.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot snapshot) {
-                    if (snapshot.exists() && snapshot.hasChild("name")) {
-                        userName = snapshot.child("name").getValue(String.class);
-                        Log.d(TAG, "User name loaded: " + userName);
+                    if (snapshot.exists()) {
+                        if (snapshot.hasChild("name")) {
+                            userName = snapshot.child("name").getValue(String.class);
+                        }
+                        if (snapshot.hasChild("email")) {
+                            userEmail = snapshot.child("email").getValue(String.class);
+                        }
+                        Log.d(TAG, "User loaded: name=" + userName + ", email=" + userEmail);
                     }
                 }
 
@@ -80,11 +93,7 @@ public class StoreCreditsHceService extends HostApduService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && intent.hasExtra("amount")) {
-            amount = intent.getStringExtra("amount");
-            Log.d(TAG, "Amount to send set to: " + amount);
-            sendLogBroadcast("Ready to send amount: " + amount);
-        }
+        // No amount handling; we only send name and email now
         return START_STICKY;
     }
 
@@ -107,10 +116,10 @@ public class StoreCreditsHceService extends HostApduService {
                     // File 1: Username
                     response = (userName != null && !userName.isEmpty()) ? userName : "Unknown User";
                     Log.d(TAG, "Sending username: " + response);
-                } else if ("03".equals(fileNumber)) {
-                    // File 3: Amount
-                    response = (amount != null && !amount.isEmpty()) ? amount : "0";
-                    Log.d(TAG, "Sending amount: " + response);
+                } else if ("02".equals(fileNumber)) {
+                    // File 2: Email
+                    response = (userEmail != null && !userEmail.isEmpty()) ? userEmail : "";
+                    Log.d(TAG, "Sending email: " + response);
                 } else {
                     return STATUS_FAILED;
                 }
@@ -118,6 +127,16 @@ public class StoreCreditsHceService extends HostApduService {
                 sendLogBroadcast("File " + fileNumber + " content: " + response);
                 return ApduUtils.buildResponse(response.getBytes(), ApduUtils.SW_SUCCESS);
             }
+        }
+        // Handle proprietary COMPLETE notifications from the reader
+        else if (hexCommandApdu.startsWith(COMPLETE_SUCCESS_HEADER)) {
+            Log.d(TAG, "Received COMPLETE SUCCESS from reader");
+            sendResultBroadcast(true, "Transaction successful");
+            return STATUS_SUCCESS;
+        } else if (hexCommandApdu.startsWith(COMPLETE_FAILURE_HEADER)) {
+            Log.d(TAG, "Received COMPLETE FAILURE from reader");
+            sendResultBroadcast(false, "Transaction failed");
+            return STATUS_SUCCESS;
         }
         // Handle SELECT AID command
         else if (ApduUtils.isSelectCommand(commandApdu)) {
@@ -156,6 +175,13 @@ public class StoreCreditsHceService extends HostApduService {
         // Send a broadcast to the activity to update UI
         Intent intent = new Intent(ACTION_NFC_STATUS);
         intent.putExtra(EXTRA_NFC_CONNECTED, isConnected);
+        sendBroadcast(intent);
+    }
+    
+    private void sendResultBroadcast(boolean success, String message) {
+        Intent intent = new Intent(ACTION_NFC_RESULT);
+        intent.putExtra(EXTRA_NFC_SUCCESS, success);
+        intent.putExtra(EXTRA_NFC_RESULT_MESSAGE, message);
         sendBroadcast(intent);
     }
 

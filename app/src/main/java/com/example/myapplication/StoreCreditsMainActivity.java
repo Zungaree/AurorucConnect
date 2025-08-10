@@ -79,13 +79,17 @@ public class StoreCreditsMainActivity extends AppCompatActivity {
             });
         }
 
-        // Set up button clicks
+        // Set up button clicks (no amount input, just start NFC screen)
         receiveButton.setOnClickListener(v -> {
-            showAmountInputDialog(MODE_RECEIVE);
+            Intent intent = new Intent(this, StoreCreditsCheckInActivity.class);
+            intent.putExtra("mode", MODE_RECEIVE);
+            startActivity(intent);
         });
 
         payButton.setOnClickListener(v -> {
-            showAmountInputDialog(MODE_PAY);
+            Intent intent = new Intent(this, StoreCreditsCheckInActivity.class);
+            intent.putExtra("mode", MODE_PAY);
+            startActivity(intent);
         });
 
         historyButton.setOnClickListener(v -> {
@@ -137,56 +141,7 @@ public class StoreCreditsMainActivity extends AppCompatActivity {
         });
     }
 
-    private void showAmountInputDialog(String mode) {
-        // Create and show the dialog for amount input
-        Dialog dialog = new Dialog(this);
-        dialog.setContentView(R.layout.dialog_amount_input);
-        dialog.getWindow().setLayout(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT
-        );
-
-        TextView titleTextView = dialog.findViewById(R.id.dialogTitleTextView);
-        EditText amountEditText = dialog.findViewById(R.id.amountEditText);
-        Button cancelButton = dialog.findViewById(R.id.cancelButton);
-        Button confirmButton = dialog.findViewById(R.id.confirmButton);
-
-        // Set title based on mode
-        titleTextView.setText(mode.equals(MODE_RECEIVE) ? "Enter Amount to Receive" : "Enter Amount to Pay");
-
-        cancelButton.setOnClickListener(v -> dialog.dismiss());
-        confirmButton.setOnClickListener(v -> {
-            String amount = amountEditText.getText().toString();
-            if (!amount.isEmpty()) {
-                try {
-                    double amountValue = Double.parseDouble(amount);
-                    
-                    // For pay mode, check if user has enough credits
-                    if (mode.equals(MODE_PAY)) {
-                        String currentCreditsText = creditAmountText.getText().toString();
-                        double currentCredits = Double.parseDouble(currentCreditsText);
-                        if (amountValue > currentCredits) {
-                            amountEditText.setError("Insufficient credits");
-                            return;
-                        }
-                    }
-                    
-                    // Launch store credits check-in activity
-                    Intent intent = new Intent(this, StoreCreditsCheckInActivity.class);
-                    intent.putExtra("amount", amount);
-                    intent.putExtra("mode", mode);
-                    startActivity(intent);
-                    dialog.dismiss();
-                } catch (NumberFormatException e) {
-                    amountEditText.setError("Invalid amount");
-                }
-            } else {
-                amountEditText.setError("Please enter an amount");
-            }
-        });
-
-        dialog.show();
-    }
+    // Amount dialog removed per requirement (send name and email only)
 
     @Override
     protected void onDestroy() {
