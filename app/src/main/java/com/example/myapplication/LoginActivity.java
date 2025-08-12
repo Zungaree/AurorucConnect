@@ -16,11 +16,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
     private TextInputEditText emailEditText, passwordEditText;
     private Button loginButton;
     private TextView forgotPasswordText, signUpText;
+    private Button resendVerificationButton; // optional button in XML
     private FirebaseAuth firebaseAuth;
 
     @Override
@@ -35,6 +37,14 @@ public class LoginActivity extends AppCompatActivity {
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
+        // This button should exist in your XML (initially hidden). If not, add it.
+        try {
+            resendVerificationButton = findViewById(R.id.buttonResendVerification);
+            if (resendVerificationButton != null) {
+                resendVerificationButton.setVisibility(View.GONE);
+                resendVerificationButton.setOnClickListener(v -> resendVerification());
+            }
+        } catch (Exception ignored) { }
         forgotPasswordText = findViewById(R.id.forgotPasswordText);
         signUpText = findViewById(R.id.signUpText);
 
@@ -74,8 +84,23 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            // Login successful
-                            startMainActivity();
+                            FirebaseUser user = firebaseAuth.getCurrentUser();
+                            if (user != null && user.isEmailVerified()) {
+                                // Login successful and verified
+                                startMainActivity();
+                            } else {
+                                // Block unverified users
+                                Toast.makeText(LoginActivity.this,
+                                        "Please verify your email first.",
+                                        Toast.LENGTH_LONG).show();
+                                if (resendVerificationButton != null) {
+                                    resendVerificationButton.setVisibility(View.VISIBLE);
+                                }
+                                FirebaseAuth.getInstance().signOut();
+                                // Reset button state
+                                loginButton.setEnabled(true);
+                                loginButton.setText("Login");
+                            }
                         } else {
                             // Login failed
                             Toast.makeText(LoginActivity.this, 
@@ -86,6 +111,44 @@ public class LoginActivity extends AppCompatActivity {
                             loginButton.setEnabled(true);
                             loginButton.setText("Login");
                         }
+                    }
+                });
+    }
+
+    // Resend verification email workflow
+    private void resendVerification() {
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+            Toast.makeText(this, "Enter your email and password first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        firebaseAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+                        if (user != null && !user.isEmailVerified()) {
+                            user.sendEmailVerification().addOnCompleteListener(sendTask -> {
+                                if (sendTask.isSuccessful()) {
+                                    Toast.makeText(LoginActivity.this,
+                                            "Verification email resent.",
+                                            Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(LoginActivity.this,
+                                            "Failed to resend: " + (sendTask.getException() != null ? sendTask.getException().getMessage() : ""),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                                FirebaseAuth.getInstance().signOut();
+                            });
+                        } else if (user != null) {
+                            Toast.makeText(LoginActivity.this, "This account is already verified.", Toast.LENGTH_SHORT).show();
+                            FirebaseAuth.getInstance().signOut();
+                        }
+                    } else {
+                        Toast.makeText(LoginActivity.this,
+                                "Unable to sign in for resend: " + (task.getException() != null ? task.getException().getMessage() : ""),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }

@@ -25,6 +25,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import android.util.Base64;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -117,12 +119,36 @@ public class SignUpActivity extends AppCompatActivity {
         signUpButton.setEnabled(false);
         signUpButton.setText("Creating Account...");
 
-        // Create user with Firebase Auth
+        // Create user with Firebase Auth, then set displayName and send verification email
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Save user data with profile picture if selected
-                        saveUserDataWithProfilePicture(name, email);
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+                        if (user != null) {
+                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                    .setDisplayName(name)
+                                    .build();
+                            user.updateProfile(profileUpdates).addOnCompleteListener(updateTask -> {
+                                user.sendEmailVerification().addOnCompleteListener(verifyTask -> {
+                                    // Save user data (async)
+                                    saveUserDataWithProfilePicture(name, email);
+                                    // Immediately navigate to info page (no Toast)
+                                    Intent i = new Intent(SignUpActivity.this, EmailVerificationInfoActivity.class);
+                                    i.putExtra("displayName", name);
+                                    i.putExtra("email", email);
+                                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                    startActivity(i);
+                                    FirebaseAuth.getInstance().signOut();
+                                    finish();
+                                });
+                            });
+                        } else {
+                            // Shouldn't happen, but handle gracefully
+                            Toast.makeText(SignUpActivity.this,
+                                    "User creation succeeded but user is null.",
+                                    Toast.LENGTH_LONG).show();
+                            resetButtonState();
+                        }
                     } else {
                         // Sign up failed
                         Toast.makeText(SignUpActivity.this,
@@ -162,10 +188,7 @@ public class SignUpActivity extends AppCompatActivity {
         usersRef.child(userId).setValue(userData)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Toast.makeText(SignUpActivity.this,
-                                "Account created successfully",
-                                Toast.LENGTH_SHORT).show();
-                        startMainActivity();
+                        // Do nothing; navigation is handled immediately after sending the email
                     } else {
                         Toast.makeText(SignUpActivity.this,
                                 "Failed to save user data: " + task.getException().getMessage(),

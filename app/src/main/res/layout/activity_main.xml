@@ -38,23 +38,24 @@
         app:layout_constraintTop_toBottomOf="@id/welcomeTextView"
         tools:layout_editor_absoluteX="24dp" />
 
-    <Button
+        <Button
 
-        android:id="@+id/checkInButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/rounded_button"
-        android:drawableStart="@drawable/ic_nfc_check_in"
-        android:drawablePadding="8dp"
-        android:drawableTint="@android:color/white"
-        android:padding="16dp"
-        android:text="Check-in"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        app:backgroundTint="#122F4F"
-        app:layout_constraintTop_toBottomOf="@id/cardImageView" />
+            android:id="@+id/checkInButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/rounded_button"
+            android:drawableStart="@drawable/ic_nfc_check_in"
+            android:drawablePadding="8dp"
+            android:drawableTint="@android:color/white"
+            android:padding="16dp"
+            android:text="Check-in"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            app:backgroundTint="#122F4F"
+            app:layout_constraintTop_toBottomOf="@id/cardImageView"
+            tools:layout_editor_absoluteX="24dp" />
 
     <Button
         android:id="@+id/battlePassButton"
@@ -144,7 +145,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="36dp"
-            android:text="Events and Products"
+            android:text="Events"
             android:textColor="@color/primary_dark"
             android:textSize="20sp"
             android:textStyle="bold"
