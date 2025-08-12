@@ -23,7 +23,6 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
     private NfcAdapter nfcAdapter;
     private TextView instructionsTextView;
     private ComponentName hceService;
-    private String mode;
     
     private BroadcastReceiver nfcReceiver = new BroadcastReceiver() {
         @Override
@@ -38,7 +37,7 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
                 boolean success = intent.getBooleanExtra(StoreCreditsHceService.EXTRA_NFC_SUCCESS, false);
                 String message = intent.getStringExtra(StoreCreditsHceService.EXTRA_NFC_RESULT_MESSAGE);
                 Toast.makeText(StoreCreditsCheckInActivity.this,
-                        message != null ? message : (success ? (mode.equals("receive") ? "Credits received!" : "Payment successful!") : "Failed"),
+                        message != null ? message : (success ? "Success" : "Failed"),
                         Toast.LENGTH_SHORT).show();
                 if (success) {
                     finish();
@@ -52,16 +51,11 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_store_credits_checkin);
         
-        // Get mode from intent
-        mode = getIntent().getStringExtra("mode");
-        
         // Initialize views
         instructionsTextView = findViewById(R.id.instructionsTextView);
         
-        // Set text based on mode
-        instructionsTextView.setText(mode.equals("receive") ? 
-            "Hold your phone near the terminal to receive credits" :
-            "Hold your phone near the terminal to pay");
+        // Generic instructions for unified flow
+        instructionsTextView.setText("Hold your phone near the terminal");
         
         // Initialize HCE service component for store credits
         hceService = new ComponentName(this, StoreCreditsHceService.class);
@@ -113,9 +107,8 @@ public class StoreCreditsCheckInActivity extends AppCompatActivity {
             PackageManager.DONT_KILL_APP
         );
         
-        // Start service
+        // Start service (no mode required)
         Intent serviceIntent = new Intent(this, StoreCreditsHceService.class);
-        serviceIntent.putExtra("mode", mode);
         startService(serviceIntent);
     }
     

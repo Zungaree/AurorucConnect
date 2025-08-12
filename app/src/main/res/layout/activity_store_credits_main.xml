@@ -67,36 +67,17 @@
                 android:shadowDy="0"
                 android:shadowRadius="8"/>
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/useCreditsButton"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
                 android:layout_marginBottom="24dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/receiveButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="16dp"
-                    android:backgroundTint="@android:color/white"
-                    android:drawableStart="@drawable/ic_receive"
-                    android:drawablePadding="8dp"
-                    android:text="Receive"
-                    android:textColor="#122F4F" />
-
-                <Button
-                    android:id="@+id/payButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:backgroundTint="@android:color/white"
-                    android:drawableStart="@drawable/ic_pay"
-                    android:drawablePadding="8dp"
-                    android:text="Pay"
-                    android:textColor="#122F4F" />
-            </LinearLayout>
+                android:backgroundTint="@android:color/white"
+                android:drawablePadding="8dp"
+                android:text="Use Credits"
+                android:textColor="#122F4F" />
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
 

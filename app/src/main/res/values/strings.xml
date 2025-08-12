@@ -4,6 +4,7 @@
     <string name="service_description">NFC HCE Card Emulation</string>
     <string name="aid_description">NFC Card Emulation Demo</string>
     <string name="no_posts_available">No posts available</string>
+    <string name="rss_feed_url">https://fetchrss.com/feed/aJDkepJhFR3DaJh8PqZvX-IC.rss</string>
     <string name="nfc_instructions">Place your device near an NFC reader</string>
     <string name="nfc_status">NFC Status: Not Connected</string>
     <string name="nfc_not_available">NFC is not available on this device</string>

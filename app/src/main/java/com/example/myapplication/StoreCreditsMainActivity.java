@@ -23,8 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class StoreCreditsMainActivity extends AppCompatActivity {
     private TextView creditAmountText;
-    private Button receiveButton;
-    private Button payButton;
+    private Button useCreditsButton;
     private Button historyButton;
     private Button learnMoreButton;
     private Button backButton;
@@ -34,8 +33,7 @@ public class StoreCreditsMainActivity extends AppCompatActivity {
     private ValueEventListener creditsListener;
     private String userName;
 
-    private static final String MODE_RECEIVE = "receive";
-    private static final String MODE_PAY = "pay";
+    // Mode removed: unified flow
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +42,7 @@ public class StoreCreditsMainActivity extends AppCompatActivity {
 
         // Initialize views
         creditAmountText = findViewById(R.id.creditAmount);
-        receiveButton = findViewById(R.id.receiveButton);
-        payButton = findViewById(R.id.payButton);
+        useCreditsButton = findViewById(R.id.useCreditsButton);
         historyButton = findViewById(R.id.historyButton);
         learnMoreButton = findViewById(R.id.learnMoreButton);
         backButton = findViewById(R.id.backButton);
@@ -79,16 +76,9 @@ public class StoreCreditsMainActivity extends AppCompatActivity {
             });
         }
 
-        // Set up button clicks (no amount input, just start NFC screen)
-        receiveButton.setOnClickListener(v -> {
+        // Set up unified action (no amount input, just start NFC screen)
+        useCreditsButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, StoreCreditsCheckInActivity.class);
-            intent.putExtra("mode", MODE_RECEIVE);
-            startActivity(intent);
-        });
-
-        payButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, StoreCreditsCheckInActivity.class);
-            intent.putExtra("mode", MODE_PAY);
             startActivity(intent);
         });
 

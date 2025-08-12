@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -21,6 +22,9 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -45,6 +49,11 @@ public class MainActivity extends AppCompatActivity {
     private Button catalogButton;
     private Button accountButton;
     private Button logoutButton;
+    private RecyclerView feedRecyclerView;
+    private LinearSnapHelper snapHelper;
+    private Handler autoScrollHandler;
+    private int autoScrollPosition = 0;
+    private static final int AUTO_SCROLL_INTERVAL_MS = 3000;
     private ComponentName hceService;
     private FirebaseAuth firebaseAuth;
     private DatabaseReference usersRef;
@@ -79,9 +88,11 @@ public class MainActivity extends AppCompatActivity {
         checkInButton = findViewById(R.id.checkInButton);
         battlePassButton = findViewById(R.id.battlePassButton);
         storeCreditsButton = findViewById(R.id.storeCreditsButton);
-        catalogButton = findViewById(R.id.catalogButton);
+        // Removed catalogButton from layout; keep reference if still present
+        // catalogButton = findViewById(R.id.catalogButton);
         accountButton = findViewById(R.id.accountButton);
         logoutButton = findViewById(R.id.logoutButton);
+        feedRecyclerView = findViewById(R.id.feedRecyclerView);
         
         // Initialize HCE service component
         hceService = new ComponentName(this, MyHostApduService.class);
@@ -90,9 +101,13 @@ public class MainActivity extends AppCompatActivity {
         checkInButton.setOnClickListener(v -> startCheckIn());
         battlePassButton.setOnClickListener(v -> openBattlePass());
         storeCreditsButton.setOnClickListener(v -> openStoreCredits());
-        catalogButton.setOnClickListener(v -> openCatalog());
+        // Catalog button removed in new UI
         accountButton.setOnClickListener(v -> openAccount());
         logoutButton.setOnClickListener(v -> handleLogout());
+        
+        // Attach snap helper for paging-like snapping
+        snapHelper = new LinearSnapHelper();
+        snapHelper.attachToRecyclerView(feedRecyclerView);
         
         // Initialize NFC
         initNfc();
@@ -107,8 +122,70 @@ public class MainActivity extends AppCompatActivity {
         // Update user info
         updateUserInfo();
         
+        // Setup carousels using RSS data
+        fetchAndBindRssCarousels();
+
         // Ensure HCE service is stopped initially
         stopHceService();
+
+        // Init auto-scroll handler
+        autoScrollHandler = new Handler(getMainLooper());
+    }
+
+    private void fetchAndBindRssCarousels() {
+        // Horizontal layout managers
+        LinearLayoutManager horizontalLm = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        feedRecyclerView.setLayoutManager(horizontalLm);
+        // Ensure first item is centered using snap helper already attached
+        feedRecyclerView.post(() -> feedRecyclerView.smoothScrollToPosition(0));
+
+        RssFeedParser parser = new RssFeedParser();
+        String feedUrl = getString(R.string.rss_feed_url);
+        parser.fetchRssFeed(feedUrl, new RssFeedParser.RssFeedCallback() {
+            @Override
+            public void onSuccess(java.util.List<RssItem> items) {
+                runOnUiThread(() -> {
+                    // Use same handling as Catalog: if empty, show empty state-like toasts and skip
+                    if (items == null || items.isEmpty()) {
+                        Toast.makeText(MainActivity.this, getString(R.string.no_posts_available), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    feedRecyclerView.setAdapter(new RssHorizontalAdapter(MainActivity.this, items));
+                    startAutoScroll(items.size());
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "RSS error: " + error, Toast.LENGTH_SHORT).show();
+                    // Fallback sample content if RSS fails
+                    java.util.List<RssItem> sample = new java.util.ArrayList<>();
+                    sample.add(new RssItem("Aurorus Hoodie", "Premium hoodie with logo", null, ""));
+                    sample.add(new RssItem("Sticker Pack", "Vinyl stickers", null, ""));
+                    sample.add(new RssItem("Community Meetup", "Join the next meetup", null, ""));
+                    feedRecyclerView.setAdapter(new RssHorizontalAdapter(MainActivity.this, sample));
+                    startAutoScroll(sample.size());
+                });
+            }
+        });
+    }
+
+    private void startAutoScroll(int itemCount) {
+        if (itemCount <= 1) return;
+        // Cancel any previous runnable
+        autoScrollHandler.removeCallbacksAndMessages(null);
+        autoScrollPosition = 0;
+        autoScrollHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                RecyclerView.Adapter<?> adapter = feedRecyclerView.getAdapter();
+                if (adapter == null || adapter.getItemCount() == 0) return;
+                autoScrollPosition = (autoScrollPosition + 1) % adapter.getItemCount();
+                feedRecyclerView.smoothScrollToPosition(autoScrollPosition);
+                autoScrollHandler.postDelayed(this, AUTO_SCROLL_INTERVAL_MS);
+            }
+        }, AUTO_SCROLL_INTERVAL_MS);
     }
 
     private void updateUserInfo() {
@@ -148,6 +225,11 @@ public class MainActivity extends AppCompatActivity {
         
         // Check NFC status when returning to the app
         checkNfcStatus();
+        // Resume auto-scroll if adapter present
+        RecyclerView.Adapter<?> adapter = feedRecyclerView.getAdapter();
+        if (adapter != null) {
+            startAutoScroll(adapter.getItemCount());
+        }
     }
 
     @Override
@@ -155,6 +237,10 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         // Unregister broadcast receiver
         unregisterReceiver(nfcReceiver);
+        // Stop auto-scroll while not visible
+        if (autoScrollHandler != null) {
+            autoScrollHandler.removeCallbacksAndMessages(null);
+        }
     }
     
     private void startCheckIn() {
