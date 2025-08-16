@@ -46,13 +46,18 @@ public class MainActivity extends AppCompatActivity {
     private Button checkInButton;
     private Button battlePassButton;
     private Button storeCreditsButton;
+    private Button productsButton;
     private Button catalogButton;
     private Button accountButton;
     private Button logoutButton;
     private RecyclerView feedRecyclerView;
+    private RecyclerView productsRecyclerView;
     private LinearSnapHelper snapHelper;
+    private LinearSnapHelper productsSnapHelper;
     private Handler autoScrollHandler;
+    private Handler productsAutoScrollHandler;
     private int autoScrollPosition = 0;
+    private int productsAutoScrollPosition = 0;
     private static final int AUTO_SCROLL_INTERVAL_MS = 3000;
     private ComponentName hceService;
     private FirebaseAuth firebaseAuth;
@@ -88,11 +93,13 @@ public class MainActivity extends AppCompatActivity {
         checkInButton = findViewById(R.id.checkInButton);
         battlePassButton = findViewById(R.id.battlePassButton);
         storeCreditsButton = findViewById(R.id.storeCreditsButton);
+        productsButton = findViewById(R.id.productsButton);
         // Removed catalogButton from layout; keep reference if still present
         // catalogButton = findViewById(R.id.catalogButton);
         accountButton = findViewById(R.id.accountButton);
         logoutButton = findViewById(R.id.logoutButton);
         feedRecyclerView = findViewById(R.id.feedRecyclerView);
+        productsRecyclerView = findViewById(R.id.productsRecyclerView);
         
         // Initialize HCE service component
         hceService = new ComponentName(this, MyHostApduService.class);
@@ -101,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         checkInButton.setOnClickListener(v -> startCheckIn());
         battlePassButton.setOnClickListener(v -> openBattlePass());
         storeCreditsButton.setOnClickListener(v -> openStoreCredits());
+        productsButton.setOnClickListener(v -> openProducts());
         // Catalog button removed in new UI
         accountButton.setOnClickListener(v -> openAccount());
         logoutButton.setOnClickListener(v -> handleLogout());
@@ -108,6 +116,9 @@ public class MainActivity extends AppCompatActivity {
         // Attach snap helper for paging-like snapping
         snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(feedRecyclerView);
+        
+        productsSnapHelper = new LinearSnapHelper();
+        productsSnapHelper.attachToRecyclerView(productsRecyclerView);
         
         // Initialize NFC
         initNfc();
@@ -124,12 +135,16 @@ public class MainActivity extends AppCompatActivity {
         
         // Setup carousels using RSS data
         fetchAndBindRssCarousels();
+        
+        // Setup products carousel
+        fetchAndBindProductsCarousel();
 
         // Ensure HCE service is stopped initially
         stopHceService();
 
-        // Init auto-scroll handler
+        // Init auto-scroll handlers
         autoScrollHandler = new Handler(getMainLooper());
+        productsAutoScrollHandler = new Handler(getMainLooper());
     }
 
     private void fetchAndBindRssCarousels() {
@@ -188,6 +203,156 @@ public class MainActivity extends AppCompatActivity {
         }, AUTO_SCROLL_INTERVAL_MS);
     }
 
+    private void fetchAndBindProductsCarousel() {
+        android.util.Log.d("MainActivity", "Setting up products carousel");
+        // Horizontal layout manager for products
+        LinearLayoutManager horizontalLm = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        productsRecyclerView.setLayoutManager(horizontalLm);
+        productsRecyclerView.post(() -> productsRecyclerView.smoothScrollToPosition(0));
+
+        DatabaseReference productsRef = FirebaseDatabase.getInstance().getReference("TBL_PRODUCTS");
+        productsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                java.util.List<ProductItem> products = new java.util.ArrayList<>();
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    ProductItem item = snapshot.getValue(ProductItem.class);
+                    if (item == null) item = new ProductItem();
+                    if (item.id == null) item.id = snapshot.getKey();
+                    
+                    // Map various possible field names
+                    if (item.name == null) item.name = snapshot.child("name").getValue(String.class);
+                    if (item.name == null) item.name = snapshot.child("productName").getValue(String.class);
+                    if (item.name == null) item.name = snapshot.child("title").getValue(String.class);
+                    
+                    if (item.description == null) item.description = snapshot.child("description").getValue(String.class);
+                    if (item.description == null) item.description = snapshot.child("desc").getValue(String.class);
+                    
+                    if (item.imageBase64 == null) {
+                        String b64 = snapshot.child("imageBase64").getValue(String.class);
+                        if (b64 == null) b64 = snapshot.child("image").getValue(String.class);
+                        item.imageBase64 = b64;
+                    }
+                    
+                    if (item.imageUrl == null) item.imageUrl = snapshot.child("imageUrl").getValue(String.class);
+                    
+                    if (item.price == 0) {
+                        Double priceD = snapshot.child("price").getValue(Double.class);
+                        if (priceD == null) {
+                            Long priceL = snapshot.child("price").getValue(Long.class);
+                            if (priceL != null) priceD = priceL.doubleValue();
+                        }
+                        if (priceD == null) {
+                            String priceS = snapshot.child("price").getValue(String.class);
+                            try { if (priceS != null) priceD = Double.parseDouble(priceS); } catch (Exception ignored) {}
+                        }
+                        if (priceD != null) item.price = priceD;
+                    }
+                    
+                    if (item.stocks == null) {
+                        Long stocksL = coerceLong(snapshot.child("stocks"));
+                        if (stocksL == null) stocksL = coerceLong(snapshot.child("stock"));
+                        if (stocksL == null) stocksL = coerceLong(snapshot.child("quantity"));
+                        if (stocksL == null) stocksL = coerceLong(snapshot.child("qty"));
+                        item.stocks = stocksL;
+                    }
+                    
+                    products.add(item);
+                }
+                
+                if (products.isEmpty()) {
+                    // Show sample products if none found
+                    ProductItem sample1 = new ProductItem();
+                    sample1.id = "sample_hoodie";
+                    sample1.name = "Aurorus Hoodie";
+                    sample1.description = "Premium hoodie with logo";
+                    sample1.price = 1200.0;
+                    sample1.stocks = 10L;
+                    
+                    ProductItem sample2 = new ProductItem();
+                    sample2.id = "sample_stickers";
+                    sample2.name = "Sticker Pack";
+                    sample2.description = "Vinyl stickers";
+                    sample2.price = 150.0;
+                    sample2.stocks = 25L;
+                    
+                    products.add(sample1);
+                    products.add(sample2);
+                }
+                
+                android.util.Log.d("MainActivity", "Setting products adapter with " + products.size() + " products");
+                productsRecyclerView.setAdapter(new ProductsHorizontalAdapter(MainActivity.this, products));
+                startProductsAutoScroll(products.size());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Show sample products on error
+                java.util.List<ProductItem> sample = new java.util.ArrayList<>();
+                ProductItem sample1 = new ProductItem();
+                sample1.id = "sample_hoodie";
+                sample1.name = "Aurorus Hoodie";
+                sample1.description = "Premium hoodie with logo";
+                sample1.price = 1200.0;
+                sample1.stocks = 10L;
+                
+                ProductItem sample2 = new ProductItem();
+                sample2.id = "sample_stickers";
+                sample2.name = "Sticker Pack";
+                sample2.description = "Vinyl stickers";
+                sample2.price = 150.0;
+                sample2.stocks = 25L;
+                
+                sample.add(sample1);
+                sample.add(sample2);
+                
+                android.util.Log.d("MainActivity", "Setting products adapter with sample data: " + sample.size() + " products");
+                productsRecyclerView.setAdapter(new ProductsHorizontalAdapter(MainActivity.this, sample));
+                startProductsAutoScroll(sample.size());
+            }
+        });
+    }
+
+    private void startProductsAutoScroll(int itemCount) {
+        android.util.Log.d("MainActivity", "Starting products auto-scroll with " + itemCount + " items");
+        if (itemCount <= 1) {
+            android.util.Log.d("MainActivity", "Not enough items for auto-scroll");
+            return;
+        }
+        // Cancel any previous runnable
+        productsAutoScrollHandler.removeCallbacksAndMessages(null);
+        productsAutoScrollPosition = 0;
+        productsAutoScrollHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                RecyclerView.Adapter<?> adapter = productsRecyclerView.getAdapter();
+                if (adapter == null || adapter.getItemCount() == 0) {
+                    android.util.Log.d("MainActivity", "No adapter or items for products auto-scroll");
+                    return;
+                }
+                productsAutoScrollPosition = (productsAutoScrollPosition + 1) % adapter.getItemCount();
+                android.util.Log.d("MainActivity", "Products auto-scroll to position: " + productsAutoScrollPosition);
+                productsRecyclerView.smoothScrollToPosition(productsAutoScrollPosition);
+                productsAutoScrollHandler.postDelayed(this, AUTO_SCROLL_INTERVAL_MS);
+            }
+        }, AUTO_SCROLL_INTERVAL_MS);
+    }
+
+    private Long coerceLong(DataSnapshot snapshot) {
+        if (snapshot == null) return null;
+        Long value = snapshot.getValue(Long.class);
+        if (value != null) return value;
+        Integer intValue = snapshot.getValue(Integer.class);
+        if (intValue != null) return intValue.longValue();
+        String strValue = snapshot.getValue(String.class);
+        if (strValue != null) {
+            try {
+                return Long.parseLong(strValue);
+            } catch (NumberFormatException ignored) {}
+        }
+        return null;
+    }
+
     private void updateUserInfo() {
         FirebaseUser user = firebaseAuth.getCurrentUser();
         if (user != null) {
@@ -225,10 +390,15 @@ public class MainActivity extends AppCompatActivity {
         
         // Check NFC status when returning to the app
         checkNfcStatus();
-        // Resume auto-scroll if adapter present
-        RecyclerView.Adapter<?> adapter = feedRecyclerView.getAdapter();
-        if (adapter != null) {
-            startAutoScroll(adapter.getItemCount());
+        // Resume auto-scroll if adapters present
+        RecyclerView.Adapter<?> feedAdapter = feedRecyclerView.getAdapter();
+        if (feedAdapter != null) {
+            startAutoScroll(feedAdapter.getItemCount());
+        }
+        
+        RecyclerView.Adapter<?> productsAdapter = productsRecyclerView.getAdapter();
+        if (productsAdapter != null) {
+            startProductsAutoScroll(productsAdapter.getItemCount());
         }
     }
 
@@ -240,6 +410,9 @@ public class MainActivity extends AppCompatActivity {
         // Stop auto-scroll while not visible
         if (autoScrollHandler != null) {
             autoScrollHandler.removeCallbacksAndMessages(null);
+        }
+        if (productsAutoScrollHandler != null) {
+            productsAutoScrollHandler.removeCallbacksAndMessages(null);
         }
     }
     
@@ -306,6 +479,11 @@ public class MainActivity extends AppCompatActivity {
     
     private void openCatalog() {
         Intent intent = new Intent(this, CatalogActivity.class);
+        startActivity(intent);
+    }
+    
+    private void openProducts() {
+        Intent intent = new Intent(this, ProductsActivity.class);
         startActivity(intent);
     }
     

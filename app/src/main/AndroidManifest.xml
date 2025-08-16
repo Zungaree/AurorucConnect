@@ -91,6 +91,18 @@
                 android:resource="@xml/store_credits_apdu_service" />
         </service>
 
+        <service
+            android:name=".ProductPaymentHceService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/product_payment_apdu_service" />
+        </service>
+
         <activity
             android:name=".StoreCreditsMainActivity"
             android:exported="false"
@@ -113,6 +125,21 @@
 
         <activity
             android:name=".EmailVerificationInfoActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"/>
+
+        <activity
+            android:name=".ProductsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"/>
+
+        <activity
+            android:name=".ProductDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"/>
+
+        <activity
+            android:name=".ProductPaymentActivity"
             android:exported="false"
             android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"/>
 
