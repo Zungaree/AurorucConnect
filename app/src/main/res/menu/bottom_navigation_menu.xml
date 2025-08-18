@@ -2,26 +2,26 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_check_in"
-        android:icon="@drawable/ic_nfc_check_in"
+        android:icon="@drawable/cn"
         android:title="Check-in" />
     
     <item
         android:id="@+id/nav_products"
-        android:icon="@android:drawable/ic_menu_gallery"
+        android:icon="@drawable/pd"
         android:title="Products" />
     
     <item
         android:id="@+id/nav_battle_pass"
-        android:icon="@android:drawable/ic_menu_agenda"
+        android:icon="@drawable/battlepass"
         android:title="Battle Pass" />
     
     <item
         android:id="@+id/nav_store"
-        android:icon="@android:drawable/ic_menu_gallery"
-        android:title="Store" />
+        android:icon="@drawable/sc"
+        android:title="Credits" />
     
     <item
         android:id="@+id/nav_account"
-        android:icon="@android:drawable/ic_menu_myplaces"
+        android:icon="@drawable/acc"
         android:title="Account" />
 </menu>

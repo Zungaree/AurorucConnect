@@ -492,13 +492,8 @@ public class MainActivity extends AppCompatActivity {
     }
     
     private void openAccount() {
-        // Show logout dialog
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Account")
-            .setMessage("Do you want to logout?")
-            .setPositiveButton("Logout", (dialog, which) -> handleLogout())
-            .setNegativeButton("Cancel", null)
-            .show();
+        Intent intent = new Intent(this, AccountActivity.class);
+        startActivity(intent);
     }
     
     private void handleLogout() {
