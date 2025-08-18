@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SignUpActivity extends AppCompatActivity {
-    private TextInputEditText nameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
+    private TextInputEditText firstNameEditText, lastNameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
     private Button signUpButton, selectProfilePictureButton;
     private TextView loginText;
     private ImageView profilePictureImageView;
@@ -56,7 +56,8 @@ public class SignUpActivity extends AppCompatActivity {
         usersRef = FirebaseDatabase.getInstance().getReference("users");
 
         // Initialize views
-        nameEditText = findViewById(R.id.nameEditText);
+        firstNameEditText = findViewById(R.id.firstNameEditText);
+        lastNameEditText = findViewById(R.id.lastNameEditText);
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         confirmPasswordEditText = findViewById(R.id.confirmPasswordEditText);
@@ -78,16 +79,25 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     private void signUpUser() {
-        String name = nameEditText.getText().toString().trim();
+        String firstName = firstNameEditText.getText().toString().trim();
+        String lastName = lastNameEditText.getText().toString().trim();
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString().trim();
         String confirmPassword = confirmPasswordEditText.getText().toString().trim();
 
         // Validate input
-        if (TextUtils.isEmpty(name)) {
-            nameEditText.setError("Name is required");
+        if (TextUtils.isEmpty(firstName)) {
+            firstNameEditText.setError("First name is required");
             return;
         }
+
+        if (TextUtils.isEmpty(lastName)) {
+            lastNameEditText.setError("Last name is required");
+            return;
+        }
+
+        // Combine first and last name
+        String fullName = firstName + " " + lastName;
 
         if (TextUtils.isEmpty(email)) {
             emailEditText.setError("Email is required");
@@ -109,11 +119,11 @@ public class SignUpActivity extends AppCompatActivity {
             return;
         }
 
-        // Profile picture is optional for now
-        // if (selectedImageUri == null) {
-        //     Toast.makeText(this, "Please select a profile picture", Toast.LENGTH_SHORT).show();
-        //     return;
-        // }
+        // Profile picture is required
+        if (selectedImageUri == null) {
+            Toast.makeText(this, "Please select a profile picture", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Show loading state
         signUpButton.setEnabled(false);
@@ -126,15 +136,15 @@ public class SignUpActivity extends AppCompatActivity {
                         FirebaseUser user = firebaseAuth.getCurrentUser();
                         if (user != null) {
                             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                    .setDisplayName(name)
+                                    .setDisplayName(fullName)
                                     .build();
                             user.updateProfile(profileUpdates).addOnCompleteListener(updateTask -> {
                                 user.sendEmailVerification().addOnCompleteListener(verifyTask -> {
                                     // Save user data (async)
-                                    saveUserDataWithProfilePicture(name, email);
+                                    saveUserDataWithProfilePicture(fullName, email);
                                     // Immediately navigate to info page (no Toast)
                                     Intent i = new Intent(SignUpActivity.this, EmailVerificationInfoActivity.class);
-                                    i.putExtra("displayName", name);
+                                    i.putExtra("displayName", fullName);
                                     i.putExtra("email", email);
                                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                     startActivity(i);
@@ -169,20 +179,18 @@ public class SignUpActivity extends AppCompatActivity {
         userData.put("email", email);
         userData.put("createdAt", System.currentTimeMillis());
 
-        // Add profile picture as base64 if selected
-        if (selectedImageUri != null) {
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
-                byte[] imageBytes = baos.toByteArray();
-                String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
-                userData.put("profilePicture", base64Image);
-            } catch (IOException e) {
-                Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
-                resetButtonState();
-                return;
-            }
+        // Add profile picture as base64 (required)
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+            byte[] imageBytes = baos.toByteArray();
+            String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+            userData.put("profilePicture", base64Image);
+        } catch (IOException e) {
+            Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
+            resetButtonState();
+            return;
         }
 
         usersRef.child(userId).setValue(userData)

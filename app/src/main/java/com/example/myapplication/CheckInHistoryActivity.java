@@ -1,14 +1,16 @@
 package com.example.myapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.cardview.widget.CardView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -25,11 +27,21 @@ import java.util.List;
 public class CheckInHistoryActivity extends AppCompatActivity {
     private static final String TAG = "CheckInHistory";
     
-    private RecyclerView historyRecyclerView;
+    private TextView currentDaysText;
+    private TextView progressDescription;
+    private ProgressBar progressBar;
+    private Button historyButton;
     private Button backButton;
-    private CheckInHistoryAdapter adapter;
+    
+    // Milestone views
+    private CardView milestone10Card, milestone20Card, milestone30Card, milestone40Card, milestone50Card;
+    private TextView milestone10Text, milestone20Text, milestone30Text, milestone40Text, milestone50Text;
+    private TextView milestone10Status, milestone20Status, milestone30Status, milestone40Status, milestone50Status;
+    private ProgressBar milestone10Progress, milestone20Progress, milestone30Progress, milestone40Progress, milestone50Progress;
+    
     private DatabaseReference historyRef;
     private String userName;
+    private int totalDays = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,18 +49,17 @@ public class CheckInHistoryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_check_in_history);
 
         // Initialize views
-        historyRecyclerView = findViewById(R.id.historyRecyclerView);
+        currentDaysText = findViewById(R.id.currentDaysText);
+        progressDescription = findViewById(R.id.progressDescription);
+        progressBar = findViewById(R.id.progressBar);
+        historyButton = findViewById(R.id.historyButton);
         backButton = findViewById(R.id.backButton);
 
-        // Set up RecyclerView
-        historyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CheckInHistoryAdapter();
-        historyRecyclerView.setAdapter(adapter);
+        // Initialize milestone views
+        initializeMilestoneViews();
 
-        // Set up back button
-        backButton.setOnClickListener(v -> finish());
 
-        // Get user name and load history
+        // Get user name and load attendance data
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             Log.d(TAG, "Getting user data for UID: " + currentUser.getUid());
@@ -63,7 +74,7 @@ public class CheckInHistoryActivity extends AppCompatActivity {
                         userName = snapshot.child("name").getValue(String.class);
                         Log.d(TAG, "Got username: " + userName);
                         if (userName != null) {
-                            loadCheckInHistory();
+                            loadAttendanceData();
                         } else {
                             Log.e(TAG, "Username is null");
                             Toast.makeText(CheckInHistoryActivity.this,
@@ -93,8 +104,38 @@ public class CheckInHistoryActivity extends AppCompatActivity {
         }
     }
 
-    private void loadCheckInHistory() {
-        Log.d(TAG, "Loading check-in history for user: " + userName);
+    private void initializeMilestoneViews() {
+        // Initialize milestone cards
+        milestone10Card = findViewById(R.id.milestone10Card);
+        milestone20Card = findViewById(R.id.milestone20Card);
+        milestone30Card = findViewById(R.id.milestone30Card);
+        milestone40Card = findViewById(R.id.milestone40Card);
+        milestone50Card = findViewById(R.id.milestone50Card);
+
+        // Initialize milestone text views
+        milestone10Text = findViewById(R.id.milestone10Text);
+        milestone20Text = findViewById(R.id.milestone20Text);
+        milestone30Text = findViewById(R.id.milestone30Text);
+        milestone40Text = findViewById(R.id.milestone40Text);
+        milestone50Text = findViewById(R.id.milestone50Text);
+
+        // Initialize milestone status views
+        milestone10Status = findViewById(R.id.milestone10Status);
+        milestone20Status = findViewById(R.id.milestone20Status);
+        milestone30Status = findViewById(R.id.milestone30Status);
+        milestone40Status = findViewById(R.id.milestone40Status);
+        milestone50Status = findViewById(R.id.milestone50Status);
+
+        // Initialize milestone progress bars
+        milestone10Progress = findViewById(R.id.milestone10Progress);
+        milestone20Progress = findViewById(R.id.milestone20Progress);
+        milestone30Progress = findViewById(R.id.milestone30Progress);
+        milestone40Progress = findViewById(R.id.milestone40Progress);
+        milestone50Progress = findViewById(R.id.milestone50Progress);
+    }
+
+    private void loadAttendanceData() {
+        Log.d(TAG, "Loading attendance data for user: " + userName);
         historyRef = FirebaseDatabase.getInstance()
             .getReference("TBL_USER_CHECKIN");
 
@@ -104,7 +145,7 @@ public class CheckInHistoryActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     Log.d(TAG, "Got check-in data snapshot, exists: " + snapshot.exists());
-                    List<CheckInHistory> historyList = new ArrayList<>();
+                    List<String> checkInDates = new ArrayList<>();
                     
                     if (snapshot.exists()) {
                         for (DataSnapshot checkInSnapshot : snapshot.getChildren()) {
@@ -118,34 +159,31 @@ public class CheckInHistoryActivity extends AppCompatActivity {
                                     timestamp, userId, userName));
 
                                 if (timestamp != null && userId != null && userName != null) {
-                                    CheckInHistory history = new CheckInHistory(
-                                        timestamp,
-                                        userId,
-                                        userName
-                                    );
-                                    historyList.add(history);
+                                    // Extract date from timestamp (assuming format like "2024-01-15 10:30:00")
+                                    String date = timestamp.split(" ")[0];
+                                    if (!checkInDates.contains(date)) {
+                                        checkInDates.add(date);
+                                    }
                                 }
                             } catch (Exception e) {
                                 Log.e(TAG, "Error processing check-in: " + e.getMessage());
                             }
                         }
                         
-                        // Sort by timestamp (newest first)
-                        Collections.reverse(historyList);
+                        // Sort dates
+                        Collections.sort(checkInDates);
                         
-                        Log.d(TAG, "Found " + historyList.size() + " check-ins");
-                        adapter.setHistoryList(historyList);
+                        totalDays = checkInDates.size();
+                        Log.d(TAG, "Found " + totalDays + " unique check-in days");
                         
-                        if (historyList.isEmpty()) {
-                            Toast.makeText(CheckInHistoryActivity.this,
-                                "No check-in history found",
-                                Toast.LENGTH_SHORT).show();
-                        }
+                        updateBattlePassProgress();
+                        updateMilestones();
+                        
                     } else {
                         Log.d(TAG, "No check-in history found for user");
-                        Toast.makeText(CheckInHistoryActivity.this,
-                            "No check-in history found",
-                            Toast.LENGTH_SHORT).show();
+                        totalDays = 0;
+                        updateBattlePassProgress();
+                        updateMilestones();
                     }
                 }
 
@@ -158,4 +196,58 @@ public class CheckInHistoryActivity extends AppCompatActivity {
                 }
             });
     }
-} 
+
+    private void updateBattlePassProgress() {
+        // Update current days text
+        currentDaysText.setText(totalDays + " Days");
+        
+        // Calculate progress towards next milestone (50 days total)
+        int nextMilestone = 50;
+        int progress = (int) ((double) totalDays / nextMilestone * 100);
+        progressBar.setProgress(progress);
+        
+        // Update progress description
+        int daysRemaining = nextMilestone - totalDays;
+        if (daysRemaining > 0) {
+            progressDescription.setText(daysRemaining + " more days for a free silver loyalty card!");
+        } else {
+            progressDescription.setText("Congratulations! You've reached the maximum milestone!");
+        }
+        
+        Log.d(TAG, "Updated Battle Pass progress: " + totalDays + " days, " + progress + "% progress");
+    }
+
+    private void updateMilestones() {
+        // Update each milestone based on user's progress
+        updateMilestone(10, milestone10Card, milestone10Text, milestone10Status, milestone10Progress);
+        updateMilestone(20, milestone20Card, milestone20Text, milestone20Status, milestone20Progress);
+        updateMilestone(30, milestone30Card, milestone30Text, milestone30Status, milestone30Progress);
+        updateMilestone(40, milestone40Card, milestone40Text, milestone40Status, milestone40Progress);
+        updateMilestone(50, milestone50Card, milestone50Text, milestone50Status, milestone50Progress);
+    }
+
+    private void updateMilestone(int milestoneDays, CardView card, TextView textView, TextView statusView, ProgressBar progressBar) {
+        // Calculate progress percentage for this milestone
+        int progressPercentage = Math.min((totalDays * 100) / milestoneDays, 100);
+        progressBar.setProgress(progressPercentage);
+        
+        if (totalDays >= milestoneDays) {
+            // Milestone completed
+            card.setCardBackgroundColor(getResources().getColor(R.color.app_turquoise));
+            textView.setTextColor(getResources().getColor(android.R.color.white));
+            statusView.setTextColor(getResources().getColor(android.R.color.white));
+            statusView.setText("✓ Claimed");
+            textView.setText(milestoneDays + " Days Complete!");
+            progressBar.setProgress(100);
+        } else {
+            // Milestone not yet reached
+            card.setCardBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            textView.setTextColor(getResources().getColor(R.color.primary_dark));
+            statusView.setTextColor(getResources().getColor(R.color.primary_dark));
+            statusView.setText(totalDays + "/" + milestoneDays);
+            textView.setText(milestoneDays + " Days");
+        }
+    }
+
+
+}

@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -42,14 +43,8 @@ public class MainActivity extends AppCompatActivity {
     
     private NfcAdapter nfcAdapter;
     private TextView welcomeTextView;
-    private ImageView cardImageView;
-    private Button checkInButton;
-    private Button battlePassButton;
-    private Button storeCreditsButton;
-    private Button productsButton;
-    private Button catalogButton;
-    private Button accountButton;
-    private Button logoutButton;
+    private TextView membershipStatusText;
+    private BottomNavigationView bottomNavigationView;
     private RecyclerView feedRecyclerView;
     private RecyclerView productsRecyclerView;
     private LinearSnapHelper snapHelper;
@@ -89,29 +84,38 @@ public class MainActivity extends AppCompatActivity {
         
         // Initialize views
         welcomeTextView = findViewById(R.id.welcomeTextView);
-        cardImageView = findViewById(R.id.cardImageView);
-        checkInButton = findViewById(R.id.checkInButton);
-        battlePassButton = findViewById(R.id.battlePassButton);
-        storeCreditsButton = findViewById(R.id.storeCreditsButton);
-        productsButton = findViewById(R.id.productsButton);
-        // Removed catalogButton from layout; keep reference if still present
-        // catalogButton = findViewById(R.id.catalogButton);
-        accountButton = findViewById(R.id.accountButton);
-        logoutButton = findViewById(R.id.logoutButton);
+        membershipStatusText = findViewById(R.id.membershipStatusText);
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
         feedRecyclerView = findViewById(R.id.feedRecyclerView);
         productsRecyclerView = findViewById(R.id.productsRecyclerView);
         
         // Initialize HCE service component
         hceService = new ComponentName(this, MyHostApduService.class);
         
-        // Set up button click listeners
-        checkInButton.setOnClickListener(v -> startCheckIn());
-        battlePassButton.setOnClickListener(v -> openBattlePass());
-        storeCreditsButton.setOnClickListener(v -> openStoreCredits());
-        productsButton.setOnClickListener(v -> openProducts());
-        // Catalog button removed in new UI
-        accountButton.setOnClickListener(v -> openAccount());
-        logoutButton.setOnClickListener(v -> handleLogout());
+        // Set up bottom navigation
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_check_in) {
+                startCheckIn();
+                return true;
+            } else if (itemId == R.id.nav_products) {
+                openProducts();
+                return true;
+            } else if (itemId == R.id.nav_battle_pass) {
+                openBattlePass();
+                return true;
+            } else if (itemId == R.id.nav_store) {
+                openStoreCredits();
+                return true;
+            } else if (itemId == R.id.nav_account) {
+                openAccount();
+                return true;
+            }
+            return false;
+        });
+
+        // Set up Aurorus card click listener for check-in
+        findViewById(R.id.aurorusCard).setOnClickListener(v -> startCheckIn());
         
         // Attach snap helper for paging-like snapping
         snapHelper = new LinearSnapHelper();
@@ -124,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         initNfc();
         
         // Apply window insets
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
@@ -488,8 +492,13 @@ public class MainActivity extends AppCompatActivity {
     }
     
     private void openAccount() {
-        // TODO: Implement Account screen
-        Toast.makeText(this, "Account settings coming soon!", Toast.LENGTH_SHORT).show();
+        // Show logout dialog
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Account")
+            .setMessage("Do you want to logout?")
+            .setPositiveButton("Logout", (dialog, which) -> handleLogout())
+            .setNegativeButton("Cancel", null)
+            .show();
     }
     
     private void handleLogout() {

@@ -58,34 +58,66 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Add Profile Picture (Optional)"
+            android:text="Add Profile Picture"
             android:textSize="12sp"
             app:cornerRadius="20dp"
             app:strokeColor="#122F4F" />
 
     </LinearLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/nameLayout"
-        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+    <LinearLayout
+        android:id="@+id/nameContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:hint="Full Name"
-        android:textColorHint="#000000"
-        app:boxBackgroundColor="#E8E8E8"
-        app:hintTextColor="#000000"
+        android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/profilePictureContainer">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/nameEditText"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/firstNameLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:inputType="textPersonName"
-            android:padding="16dp"
-            android:textColor="#000000" />
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:hint="First Name"
+            android:textColorHint="#000000"
+            app:boxBackgroundColor="#E8E8E8"
+            app:hintTextColor="#000000">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/firstNameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:padding="16dp"
+                android:textColor="#000000" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/lastNameLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:hint="Last Name"
+            android:textColorHint="#000000"
+            app:boxBackgroundColor="#E8E8E8"
+            app:hintTextColor="#000000">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/lastNameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:padding="16dp"
+                android:textColor="#000000" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/emailLayout"
@@ -97,7 +129,7 @@
         android:textColorHint="#000000"
         app:boxBackgroundColor="#E8E8E8"
         app:hintTextColor="#000000"
-        app:layout_constraintTop_toBottomOf="@id/nameLayout">
+        app:layout_constraintTop_toBottomOf="@id/nameContainer">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/emailEditText"
